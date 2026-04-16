@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
-import type { AppConfig } from '@/types';
+import { readSettings } from '@/lib/settings';
 
-export async function GET(): Promise<NextResponse<AppConfig>> {
+export async function GET(): Promise<NextResponse> {
+  const s = readSettings();
   return NextResponse.json({
-    childName: process.env.CHILD_NAME ?? 'Mon enfant',
-    childAge: parseInt(process.env.CHILD_AGE ?? '10'),
-    schoolLevel: (process.env.CHILD_SCHOOL_LEVEL ?? 'CM2') as AppConfig['schoolLevel'],
-    parentEmail: process.env.PARENT_EMAIL ?? '',
+    configured: s.configured,
+    childName: s.childName,
+    childAge: s.childAge,
+    schoolLevel: s.schoolLevel,
+    parentEmail: s.parentEmail,
+    mascot: s.mascot,
+    theme: s.theme,
+    voiceSpeed: s.voiceSpeed,
+    enableVoiceResponse: s.enableVoiceResponse,
+    subjectsOfFocus: s.subjectsOfFocus,
   });
 }

@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Edubudy",
+    "slug": "edubudy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "edubudy",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#EFF6FF"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.edubudy.app",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Edubudy utilise le micro pour écouter tes questions.",
+        "NSMicrophoneUsageDescription": "Edubudy utilise le micro pour écouter tes questions."
+      }
+    },
+    "android": {
+      "package": "com.edubudy.app",
+      "permissions": ["RECORD_AUDIO"]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#3b82f6"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

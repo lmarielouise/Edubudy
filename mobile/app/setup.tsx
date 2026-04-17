@@ -54,7 +54,8 @@ export default function SetupScreen() {
 
   const handleSave = async () => {
     setError('');
-    if (!form.anthropicApiKey.trim()) { setError('La clé Anthropic est requise'); return; }
+    if (!form.serverUrl.trim()) { setError("L'URL du serveur est requise"); return; }
+    if (!form.apiSecret.trim()) { setError('Le secret API est requis'); return; }
     if (!form.childName.trim()) { setError('Le prénom est requis'); return; }
     if (!form.parentPin || form.parentPin.length < 4) { setError('PIN trop court (4 chiffres min.)'); return; }
     if (form.parentPin !== (form as typeof form & { confirmPin: string }).confirmPin) { setError('Les PIN ne correspondent pas'); return; }
@@ -100,7 +101,7 @@ export default function SetupScreen() {
 
   const canNext = [
     true,
-    form.anthropicApiKey.trim().length > 10 && form.geminiApiKey.trim().length > 10,
+    form.serverUrl.trim().length > 5 && form.apiSecret.trim().length > 5,
     form.childName.trim().length > 0,
     form.parentPin.length >= 4 && form.parentPin === (form as typeof form & { confirmPin: string }).confirmPin,
     true,
@@ -146,23 +147,25 @@ export default function SetupScreen() {
             </View>
           )}
 
-          {/* ── STEP 2 : Clés API ── */}
+          {/* ── STEP 2 : Connexion serveur ── */}
           {step === 2 && (
             <View style={styles.stepContent}>
-              <Text style={styles.stepEmoji}>🔑</Text>
-              <Text style={styles.stepTitle}>Clés API</Text>
-              <Text style={styles.stepSub}>Ces clés restent sur votre téléphone et ne sont jamais partagées.</Text>
+              <Text style={styles.stepEmoji}>🌐</Text>
+              <Text style={styles.stepTitle}>Connexion au serveur</Text>
+              <Text style={styles.stepSub}>Renseignez l'URL de votre déploiement Vercel et votre secret API.</Text>
               <View style={styles.field}>
-                <Text style={styles.label}>Clé Anthropic (Claude) — obligatoire</Text>
-                <TextInput style={styles.input} value={form.anthropicApiKey} onChangeText={t => upd({ anthropicApiKey: t })}
-                  placeholder="sk-ant-api03-..." placeholderTextColor="#9ca3af" autoCapitalize="none" autoCorrect={false} />
-                <Text style={styles.hint}>console.anthropic.com → API Keys</Text>
+                <Text style={styles.label}>URL du serveur Edubudy</Text>
+                <TextInput style={styles.input} value={form.serverUrl} onChangeText={t => upd({ serverUrl: t.trim() })}
+                  placeholder="https://edubudy.vercel.app" placeholderTextColor="#9ca3af"
+                  autoCapitalize="none" autoCorrect={false} keyboardType="url" />
+                <Text style={styles.hint}>L'URL Vercel de votre backend (sans / final)</Text>
               </View>
               <View style={styles.field}>
-                <Text style={styles.label}>Clé Google Gemini — pour la voix</Text>
-                <TextInput style={styles.input} value={form.geminiApiKey} onChangeText={t => upd({ geminiApiKey: t })}
-                  placeholder="AIza..." placeholderTextColor="#9ca3af" autoCapitalize="none" autoCorrect={false} />
-                <Text style={styles.hint}>aistudio.google.com → Get API key • Gratuit jusqu'à 1500 requêtes/jour !</Text>
+                <Text style={styles.label}>Secret API</Text>
+                <TextInput style={styles.input} value={form.apiSecret} onChangeText={t => upd({ apiSecret: t.trim() })}
+                  placeholder="mon-secret-tres-long" placeholderTextColor="#9ca3af"
+                  autoCapitalize="none" autoCorrect={false} secureTextEntry />
+                <Text style={styles.hint}>La valeur de API_SECRET dans vos variables Vercel</Text>
               </View>
             </View>
           )}
@@ -243,11 +246,6 @@ export default function SetupScreen() {
                   onChangeText={t => upd({ confirmPin: t } as Partial<typeof form>)}
                   placeholder="••••" placeholderTextColor="#9ca3af" keyboardType="numeric" secureTextEntry maxLength={8} textAlign="center"
                 />
-              </View>
-              <View style={styles.field}>
-                <Text style={styles.label}>Email parent <Text style={styles.optional}>(pour les alertes)</Text></Text>
-                <TextInput style={styles.input} value={form.parentEmail} onChangeText={t => upd({ parentEmail: t })}
-                  placeholder="vous@email.com" placeholderTextColor="#9ca3af" keyboardType="email-address" autoCapitalize="none" />
               </View>
             </View>
           )}

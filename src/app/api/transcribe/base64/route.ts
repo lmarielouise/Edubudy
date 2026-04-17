@@ -12,11 +12,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!geminiKey) return NextResponse.json({ error: 'GEMINI_API_KEY manquante' }, { status: 503 });
 
-  const formData = await req.formData();
-  const audioFile = formData.get('audio') as File | null;
-  if (!audioFile) return NextResponse.json({ error: 'Fichier audio manquant' }, { status: 400 });
-
-  const base64 = Buffer.from(await audioFile.arrayBuffer()).toString('base64');
+  const { audio, mimeType } = (await req.json()) as { audio: string; mimeType?: string };
+  if (!audio) return NextResponse.json({ error: 'Audio manquant' }, { status: 400 });
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
@@ -25,7 +22,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [
-          { inlineData: { mimeType: audioFile.type || 'audio/mp4', data: base64 } },
+          { inlineData: { mimeType: mimeType ?? 'audio/mp4', data: audio } },
           { text: 'Transcris exactement ce qui est dit dans cet audio en français. Retourne uniquement la transcription, sans commentaire.' },
         ]}],
         generationConfig: { temperature: 0 },

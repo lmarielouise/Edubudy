@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readSettings } from '@/lib/settings';
 
+// Endpoint public — retourne la config enfant (sans données sensibles)
 export async function GET(): Promise<NextResponse> {
   const s = readSettings();
   return NextResponse.json({
@@ -8,7 +9,6 @@ export async function GET(): Promise<NextResponse> {
     childName: s.childName,
     childAge: s.childAge,
     schoolLevel: s.schoolLevel,
-    parentEmail: s.parentEmail,
     mascot: s.mascot,
     theme: s.theme,
     voiceSpeed: s.voiceSpeed,

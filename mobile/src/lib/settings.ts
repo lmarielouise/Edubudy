@@ -3,17 +3,13 @@ import type { SchoolLevel } from '@/types';
 
 export interface AppSettings {
   configured: boolean;
-  // APIs
-  anthropicApiKey: string;
-  geminiApiKey: string;
-  // Enfant
+  serverUrl: string;     // URL Vercel, ex: https://edubudy.vercel.app
+  apiSecret: string;     // Correspond à API_SECRET côté serveur
+  parentPin: string;     // Pour accéder à l'espace parent dans l'app
+  // Profil enfant (stocké localement pour personnalisation UI)
   childName: string;
   childAge: number;
   schoolLevel: SchoolLevel;
-  // Parent
-  parentPin: string;
-  parentEmail: string;
-  // Personnalisation
   mascot: 'owl' | 'robot' | 'star' | 'cat';
   theme: 'blue' | 'green' | 'purple' | 'orange';
   voiceSpeed: number;
@@ -35,17 +31,16 @@ export const THEMES = {
   orange: { label: 'Soleil', primary: '#f97316', bg: '#fff7ed', light: '#fed7aa' },
 } as const;
 
-const STORAGE_KEY = 'edubudy_settings';
+const KEY = 'edubudy_settings_v2';
 
 export const DEFAULT_SETTINGS: AppSettings = {
   configured: false,
-  anthropicApiKey: '',
-  geminiApiKey: '',
+  serverUrl: '',
+  apiSecret: '',
+  parentPin: '',
   childName: '',
   childAge: 9,
   schoolLevel: 'CM2',
-  parentPin: '',
-  parentEmail: '',
   mascot: 'owl',
   theme: 'blue',
   voiceSpeed: 0.9,
@@ -55,14 +50,19 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 export async function loadSettings(): Promise<AppSettings> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } as AppSettings;
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
+    const raw = await AsyncStorage.getItem(KEY);
+    return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } as AppSettings : DEFAULT_SETTINGS;
+  } catch { return DEFAULT_SETTINGS; }
 }
 
-export async function saveSettings(settings: AppSettings): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+export async function saveSettings(s: AppSettings): Promise<void> {
+  await AsyncStorage.setItem(KEY, JSON.stringify(s));
+}
+
+// Helper — headers communs pour tous les appels au serveur
+export function apiHeaders(apiSecret: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'x-api-secret': apiSecret,
+  };
 }

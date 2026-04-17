@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { loadSettings, THEMES } from '@/lib/settings';
-import { loadAlerts, acknowledgeAlert, getUnreadCount } from '@/lib/storage';
+import { loadSettings, THEMES, type AppSettings } from '@/lib/settings';
+import { loadAlerts, acknowledgeAlert } from '@/lib/storage';
 import AlertCard from '@/components/AlertCard';
 import type { Alert } from '@/types';
 
@@ -19,18 +19,20 @@ export default function ParentScreen() {
   const [filter, setFilter] = useState<'unread' | 'all'>('unread');
   const [themeKey, setThemeKey] = useState<keyof typeof THEMES>('blue');
   const [parentPin, setParentPin] = useState('1234');
+  const [serverSettings, setServerSettings] = useState<Pick<AppSettings, 'serverUrl' | 'apiSecret'>>({ serverUrl: '', apiSecret: '' });
 
   useEffect(() => {
     loadSettings().then(s => {
       setThemeKey(s.theme ?? 'blue');
       setParentPin(s.parentPin ?? '1234');
+      setServerSettings({ serverUrl: s.serverUrl, apiSecret: s.apiSecret });
     });
   }, []);
 
   const theme = THEMES[themeKey];
 
   const loadData = async () => {
-    const [a, u] = await Promise.all([loadAlerts(), getUnreadCount()]);
+    const { alerts: a, unread: u } = await loadAlerts(serverSettings.serverUrl, serverSettings.apiSecret);
     setAlerts(a);
     setUnread(u);
   };
@@ -51,7 +53,7 @@ export default function ParentScreen() {
   };
 
   const handleAcknowledge = async (id: string) => {
-    await acknowledgeAlert(id);
+    await acknowledgeAlert(id, serverSettings.serverUrl, serverSettings.apiSecret);
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, acknowledged: true } : a));
     setUnread(prev => Math.max(0, prev - 1));
   };

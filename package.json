@@ -13,8 +13,8 @@
     "react": "^18",
     "react-dom": "^18",
     "@anthropic-ai/sdk": "^0.28.0",
+    "@neondatabase/serverless": "^0.9.3",
     "nodemailer": "^6.9.13",
-    "openai": "^4.52.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

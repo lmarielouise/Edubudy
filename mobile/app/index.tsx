@@ -10,10 +10,9 @@ import * as ExpoHaptics from 'expo-haptics';
 import { Audio } from 'expo-av';
 import { v4 as uuidv4 } from 'uuid';
 import { loadSettings, MASCOTS, THEMES, type AppSettings } from '@/lib/settings';
-import { getChatResponse, runSafetyCheck } from '@/lib/claude';
-import { transcribeWithGemini } from '@/lib/transcribe';
+import { getChatResponse } from '@/lib/claude';
+import { transcribeWithServer } from '@/lib/transcribe';
 import { SAFETY_CONFIG } from '@/lib/safety';
-import { saveAlert } from '@/lib/storage';
 import { sendParentAlert } from '@/lib/notifications';
 import ChatBubble from '@/components/ChatBubble';
 import type { Message, SafetyCategory } from '@/types';
@@ -36,7 +35,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadSettings().then((s) => {
-      if (!s.configured || !s.anthropicApiKey) {
+      if (!s.configured || !s.serverUrl) {
         router.replace('/setup');
         return;
       }
@@ -50,7 +49,6 @@ export default function HomeScreen() {
     });
   }, []);
 
-  // Pulse animation quand recording
   useEffect(() => {
     if (appState === 'recording') {
       Animated.loop(
@@ -96,36 +94,31 @@ export default function HomeScreen() {
     const history = messages.filter(m => m.id !== 'welcome').map(m => ({ role: m.role, content: m.content }));
 
     try {
-      const [chatReply, safetyResult] = await Promise.all([
-        getChatResponse(text, history, settings.childName, settings.childAge, settings.schoolLevel, settings.anthropicApiKey),
-        runSafetyCheck(text, settings.anthropicApiKey),
-      ]);
+      const { reply, safetyFlag } = await getChatResponse(text, history, settings.serverUrl, settings.apiSecret);
 
-      let reply = chatReply;
-      let safetyFlag: SafetyCategory | undefined;
-
-      if (safetyResult.flagged && safetyResult.category !== 'NONE') {
-        const category = safetyResult.category as Exclude<SafetyCategory, 'NONE'>;
+      if (safetyFlag && safetyFlag !== 'NONE') {
+        const category = safetyFlag as Exclude<SafetyCategory, 'NONE'>;
         const cfg = SAFETY_CONFIG[category];
-        reply = cfg.childResponse(settings.childName);
-        safetyFlag = category;
-
-        const alert = {
+        await sendParentAlert({
           id: uuidv4(),
           timestamp: new Date().toISOString(),
           category,
-          severity: cfg.severity,
+          severity: cfg?.severity ?? 'HIGH',
           triggerMessage: text,
           childName: settings.childName,
-          parentAdvice: cfg.parentAdvice,
-          resources: cfg.resources,
+          parentAdvice: cfg?.parentAdvice ?? '',
+          resources: cfg?.resources ?? [],
           acknowledged: false,
-        };
-        await saveAlert(alert);
-        await sendParentAlert(alert);
+        });
       }
 
-      const assistantMsg: Message = { id: uuidv4(), role: 'assistant', content: reply, timestamp: new Date().toISOString(), safetyFlag };
+      const assistantMsg: Message = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: reply,
+        timestamp: new Date().toISOString(),
+        safetyFlag: safetyFlag as SafetyCategory | undefined,
+      };
       setMessages(prev => [...prev, assistantMsg]);
 
       if (settings.enableVoiceResponse) {
@@ -167,15 +160,7 @@ export default function HomeScreen() {
       recordingRef.current = null;
       if (!uri) { setAppState('idle'); return; }
 
-      if (!settings.geminiApiKey) {
-        RNAlert.alert('Clé Gemini manquante', 'Configure ta clé Gemini dans les paramètres parents pour utiliser la voix.', [
-          { text: 'Paramètres', onPress: () => router.push('/setup') },
-          { text: 'Annuler', onPress: () => setAppState('idle') },
-        ]);
-        return;
-      }
-
-      const text = await transcribeWithGemini(uri, settings.geminiApiKey);
+      const text = await transcribeWithServer(uri, settings.serverUrl, settings.apiSecret);
       if (text.trim()) {
         await handleSendMessage(text.trim());
       } else {
@@ -299,14 +284,12 @@ export default function HomeScreen() {
       ) : (
         /* ── VUE ACCUEIL — Grand bouton ── */
         <View style={styles.homeContainer}>
-          {/* Mascotte */}
           <View style={[styles.mascotCircle, { backgroundColor: theme.light }]}>
             <Text style={styles.mascotEmoji}>{mascot.emoji}</Text>
           </View>
           <Text style={styles.greeting}>Bonjour {settings.childName} !</Text>
           <Text style={styles.subGreeting}>Je suis {mascot.name}, ton assistant</Text>
 
-          {/* Grand bouton */}
           <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
             <TouchableOpacity
               style={[styles.bigButton, { backgroundColor: buttonBg,
@@ -326,7 +309,6 @@ export default function HomeScreen() {
             {buttonLabel}
           </Text>
 
-          {/* Saisie texte */}
           <KeyboardAvoidingView style={styles.textRow} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <TextInput
               style={styles.textInput}

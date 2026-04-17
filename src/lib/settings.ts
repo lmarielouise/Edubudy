@@ -1,5 +1,4 @@
-import fs from 'fs';
-import path from 'path';
+// Tous les paramètres viennent des variables d'environnement Vercel
 import type { SchoolLevel } from '@/types';
 
 export interface AppSettings {
@@ -11,24 +10,26 @@ export interface AppSettings {
   parentPin: string;
   mascot: 'owl' | 'robot' | 'star' | 'cat';
   theme: 'blue' | 'green' | 'purple' | 'orange';
-  voiceSpeed: number; // 0.7 | 0.9 | 1.1
+  voiceSpeed: number;
   enableVoiceResponse: boolean;
   subjectsOfFocus: string[];
 }
 
-export const DEFAULT_SETTINGS: AppSettings = {
-  configured: false,
-  childName: 'Mon enfant',
-  childAge: 10,
-  schoolLevel: 'CM2',
-  parentEmail: '',
-  parentPin: '1234',
-  mascot: 'owl',
-  theme: 'blue',
-  voiceSpeed: 0.9,
-  enableVoiceResponse: true,
-  subjectsOfFocus: [],
-};
+export function readSettings(): AppSettings {
+  return {
+    configured: !!(process.env.ANTHROPIC_API_KEY && process.env.CHILD_NAME),
+    childName: process.env.CHILD_NAME ?? 'Mon enfant',
+    childAge: parseInt(process.env.CHILD_AGE ?? '10'),
+    schoolLevel: (process.env.CHILD_SCHOOL_LEVEL ?? 'CM2') as SchoolLevel,
+    parentEmail: process.env.PARENT_EMAIL ?? '',
+    parentPin: process.env.PARENT_PIN ?? '1234',
+    mascot: (process.env.MASCOT ?? 'owl') as AppSettings['mascot'],
+    theme: (process.env.THEME ?? 'blue') as AppSettings['theme'],
+    voiceSpeed: parseFloat(process.env.VOICE_SPEED ?? '0.9'),
+    enableVoiceResponse: process.env.ENABLE_VOICE_RESPONSE !== 'false',
+    subjectsOfFocus: process.env.SUBJECTS_OF_FOCUS?.split(',').filter(Boolean) ?? [],
+  };
+}
 
 export const MASCOTS = {
   owl:   { emoji: '🦉', name: "Oliv'",  desc: 'Sage et curieux' },
@@ -43,41 +44,3 @@ export const THEMES = {
   purple: { label: 'Cosmos', primary: '#8b5cf6', bg: '#f5f3ff', light: '#ede9fe' },
   orange: { label: 'Soleil', primary: '#f97316', bg: '#fff7ed', light: '#fed7aa' },
 } as const;
-
-const SETTINGS_PATH = path.join(process.cwd(), 'data', 'settings.json');
-
-function ensureDataDir(): void {
-  const dir = path.dirname(SETTINGS_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
-
-export function readSettings(): AppSettings {
-  ensureDataDir();
-  if (!fs.existsSync(SETTINGS_PATH)) {
-    // Fallback to env vars for backwards compat
-    const fromEnv = {
-      ...DEFAULT_SETTINGS,
-      childName: process.env.CHILD_NAME ?? DEFAULT_SETTINGS.childName,
-      childAge: parseInt(process.env.CHILD_AGE ?? String(DEFAULT_SETTINGS.childAge)),
-      schoolLevel: (process.env.CHILD_SCHOOL_LEVEL ?? DEFAULT_SETTINGS.schoolLevel) as SchoolLevel,
-      parentEmail: process.env.PARENT_EMAIL ?? DEFAULT_SETTINGS.parentEmail,
-      parentPin: process.env.PARENT_PIN ?? DEFAULT_SETTINGS.parentPin,
-      configured: !!(process.env.ANTHROPIC_API_KEY && process.env.CHILD_NAME),
-    };
-    return fromEnv;
-  }
-  try {
-    return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8')) as AppSettings;
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
-}
-
-export function writeSettings(settings: AppSettings): void {
-  ensureDataDir();
-  fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2), 'utf-8');
-}
-
-export function isConfigured(): boolean {
-  return readSettings().configured;
-}

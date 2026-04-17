@@ -100,7 +100,7 @@ export default function SetupScreen() {
 
   const canNext = [
     true,
-    form.anthropicApiKey.trim().length > 10,
+    form.anthropicApiKey.trim().length > 10 && form.geminiApiKey.trim().length > 10,
     form.childName.trim().length > 0,
     form.parentPin.length >= 4 && form.parentPin === (form as typeof form & { confirmPin: string }).confirmPin,
     true,
@@ -159,10 +159,10 @@ export default function SetupScreen() {
                 <Text style={styles.hint}>console.anthropic.com → API Keys</Text>
               </View>
               <View style={styles.field}>
-                <Text style={styles.label}>Clé OpenAI (Whisper) — pour la voix sur iPhone</Text>
-                <TextInput style={styles.input} value={form.openaiApiKey} onChangeText={t => upd({ openaiApiKey: t })}
-                  placeholder="sk-proj-..." placeholderTextColor="#9ca3af" autoCapitalize="none" autoCorrect={false} />
-                <Text style={styles.hint}>platform.openai.com → API Keys • ~0,006 € / question vocale</Text>
+                <Text style={styles.label}>Clé Google Gemini — pour la voix</Text>
+                <TextInput style={styles.input} value={form.geminiApiKey} onChangeText={t => upd({ geminiApiKey: t })}
+                  placeholder="AIza..." placeholderTextColor="#9ca3af" autoCapitalize="none" autoCorrect={false} />
+                <Text style={styles.hint}>aistudio.google.com → Get API key • Gratuit jusqu'à 1500 requêtes/jour !</Text>
               </View>
             </View>
           )}

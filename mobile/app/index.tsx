@@ -10,7 +10,8 @@ import * as ExpoHaptics from 'expo-haptics';
 import { Audio } from 'expo-av';
 import { v4 as uuidv4 } from 'uuid';
 import { loadSettings, MASCOTS, THEMES, type AppSettings } from '@/lib/settings';
-import { getChatResponse, runSafetyCheck, transcribeAudio } from '@/lib/claude';
+import { getChatResponse, runSafetyCheck } from '@/lib/claude';
+import { transcribeWithGemini } from '@/lib/transcribe';
 import { SAFETY_CONFIG } from '@/lib/safety';
 import { saveAlert } from '@/lib/storage';
 import { sendParentAlert } from '@/lib/notifications';
@@ -166,15 +167,15 @@ export default function HomeScreen() {
       recordingRef.current = null;
       if (!uri) { setAppState('idle'); return; }
 
-      if (!settings.openaiApiKey) {
-        RNAlert.alert('Clé OpenAI manquante', 'Configure ta clé OpenAI dans les paramètres parents pour utiliser la voix.', [
+      if (!settings.geminiApiKey) {
+        RNAlert.alert('Clé Gemini manquante', 'Configure ta clé Gemini dans les paramètres parents pour utiliser la voix.', [
           { text: 'Paramètres', onPress: () => router.push('/setup') },
           { text: 'Annuler', onPress: () => setAppState('idle') },
         ]);
         return;
       }
 
-      const text = await transcribeAudio(uri, settings.openaiApiKey);
+      const text = await transcribeWithGemini(uri, settings.geminiApiKey);
       if (text.trim()) {
         await handleSendMessage(text.trim());
       } else {

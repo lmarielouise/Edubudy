@@ -80,7 +80,13 @@ export async function getChatResponse(
         .join('\n\n')}`
     : '';
 
-  const systemPrompt = basePrompt + ragContext;
+  // Build system blocks: base prompt cached + optional RAG context
+  const systemBlocks: Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> = [
+    { type: 'text', text: basePrompt, cache_control: { type: 'ephemeral' } },
+  ];
+  if (ragContext) {
+    systemBlocks.push({ type: 'text', text: ragContext });
+  }
 
   const messages = [
     ...history.map((m) => ({
@@ -90,10 +96,10 @@ export async function getChatResponse(
     { role: 'user' as const, content: message },
   ];
 
-  const response = await client.messages.create({
+  const response = await client.beta.promptCaching.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 600,
-    system: systemPrompt,
+    system: systemBlocks,
     messages,
   });
 

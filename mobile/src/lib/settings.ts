@@ -5,7 +5,7 @@ export interface AppSettings {
   configured: boolean;
   // APIs
   anthropicApiKey: string;
-  openaiApiKey: string;
+  geminiApiKey: string;
   // Enfant
   childName: string;
   childAge: number;
@@ -40,7 +40,7 @@ const STORAGE_KEY = 'edubudy_settings';
 export const DEFAULT_SETTINGS: AppSettings = {
   configured: false,
   anthropicApiKey: '',
-  openaiApiKey: '',
+  geminiApiKey: '',
   childName: '',
   childAge: 9,
   schoolLevel: 'CM2',
